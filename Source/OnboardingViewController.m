@@ -56,7 +56,9 @@
 	[openPanel beginSheetModalForWindow:self.view.window
 	                  completionHandler:^(NSModalResponse result) {
 		                  if (result == NSModalResponseOK) {
-			                  _libraryURL = openPanel.URL;
+			                  [NSNotificationCenter.defaultCenter
+			                          postNotificationName:LibraryURLDidChangeNotificationName
+			                                        object:openPanel.URL];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 			                  [target performSelector:action];

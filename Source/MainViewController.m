@@ -6,9 +6,14 @@
 - (instancetype)init {
 	self = [super init];
 	self.title = @"Modal";
+
 	onboardingViewController = [OnboardingViewController controllerWithTarget:self
-	                                                                   action:@selector(didChooseLibraryFolder)];
+	                                                                   action:@selector(completedOnboarding)];
 	[self addChildViewController:onboardingViewController];
+
+	libraryViewController = [[LibraryViewController alloc] init];
+	[self addChildViewController:libraryViewController];
+
 	return self;
 }
 
@@ -17,10 +22,7 @@
 	[self.view addSubview:onboardingViewController.view];
 }
 
-- (void)didChooseLibraryFolder {
-	NSLog(@"%@", onboardingViewController.libraryURL);
-	libraryViewController = [[LibraryViewController alloc] init];
-	[self addChildViewController:libraryViewController];
+- (void)completedOnboarding {
 	[self transitionFromViewController:onboardingViewController
 	                  toViewController:libraryViewController
 	                           options:NSViewControllerTransitionSlideUp

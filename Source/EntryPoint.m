@@ -1,5 +1,7 @@
 @import AppKit;
 
+const NSNotificationName LibraryURLDidChangeNotificationName = @"org.xoria.Modal.LibraryURLDidChangeNotificationName";
+
 #include "AppDelegate.h"
 #include "MainViewController.h"
 #include "OnboardingViewController.h"
