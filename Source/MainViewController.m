@@ -1,24 +1,33 @@
-@implementation MainViewController
+@implementation MainViewController {
+	OnboardingViewController *onboardingViewController;
+	LibraryViewController *libraryViewController;
+}
 
 - (instancetype)init {
 	self = [super init];
 	self.title = @"Modal";
+	onboardingViewController = [OnboardingViewController controllerWithTarget:self
+	                                                                   action:@selector(didChooseLibraryFolder)];
+	[self addChildViewController:onboardingViewController];
 	return self;
 }
 
 - (void)viewDidLoad {
 	[super viewDidLoad];
+	[self.view addSubview:onboardingViewController.view];
+}
 
-	NSTextField *label = [NSTextField labelWithString:@"Hello, Cocoa!"];
-	[self.view addSubview:label];
-	label.translatesAutoresizingMaskIntoConstraints = NO;
-	NSLayoutGuide *guide = self.view.layoutMarginsGuide;
-	[NSLayoutConstraint activateConstraints:@[
-		[label.topAnchor constraintEqualToAnchor:guide.topAnchor],
-		[label.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor],
-		[label.leadingAnchor constraintEqualToAnchor:guide.leadingAnchor],
-		[label.trailingAnchor constraintEqualToAnchor:guide.trailingAnchor],
-	]];
+- (void)didChooseLibraryFolder {
+	NSLog(@"%@", onboardingViewController.libraryURL);
+	libraryViewController = [[LibraryViewController alloc] init];
+	[self addChildViewController:libraryViewController];
+	[self transitionFromViewController:onboardingViewController
+	                  toViewController:libraryViewController
+	                           options:NSViewControllerTransitionSlideUp
+	                 completionHandler:^{
+		                 [onboardingViewController removeFromParentViewController];
+		                 onboardingViewController = nil;
+	                 }];
 }
 
 @end

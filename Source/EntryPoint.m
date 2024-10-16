@@ -2,9 +2,13 @@
 
 #include "AppDelegate.h"
 #include "MainViewController.h"
+#include "OnboardingViewController.h"
+#include "LibraryViewController.h"
 
 #include "AppDelegate.m"
 #include "MainViewController.m"
+#include "OnboardingViewController.m"
+#include "LibraryViewController.m"
 
 int main(void) {
 	[NSApplication sharedApplication];
