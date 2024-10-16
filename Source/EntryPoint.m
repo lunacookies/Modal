@@ -1,4 +1,5 @@
 @import AppKit;
+@import UniformTypeIdentifiers;
 
 const NSNotificationName LibraryURLDidChangeNotificationName = @"org.xoria.Modal.LibraryURLDidChangeNotificationName";
 
