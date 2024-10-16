@@ -1,11 +1,14 @@
 @interface Track : NSObject
 @property(nonatomic) NSURL *url;
 @property(nonatomic) NSString *title;
-@property(nonatomic) NSString *album;
+@property(nonatomic) NSString *albumTitle;
 @property(nonatomic) NSData *artworkData;
 @end
 
-@implementation Track
+@interface Album : NSObject
+@property(nonatomic) NSString *title;
+@property(nonatomic) NSMutableArray<Track *> *tracks;
+@property(readonly) NSData *artworkData;
 @end
 
 @interface LibraryCellView : NSView
@@ -20,14 +23,16 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 @implementation LibraryViewController {
 	dispatch_queue_t import_queue;
 	NSTableView *tableView;
-	NSMutableArray<Track *> *tracks;
+	NSMutableArray<Album *> *albums;
+	NSMutableDictionary<NSString *, NSNumber *> *albumIndexes;
 }
 
 - (instancetype)init {
 	self = [super init];
 
 	import_queue = dispatch_queue_create("org.xoria.Modal.LibraryViewController.ImportQueue", DISPATCH_QUEUE_SERIAL);
-	tracks = [[NSMutableArray alloc] init];
+	albums = [[NSMutableArray alloc] init];
+	albumIndexes = [[NSMutableDictionary alloc] init];
 
 	[NSNotificationCenter.defaultCenter addObserver:self
 	                                       selector:@selector(libraryURLDidChange:)
@@ -68,11 +73,11 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 }
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)_ {
-	return (NSInteger)tracks.count;
+	return (NSInteger)albums.count;
 }
 
 - (id)tableView:(NSTableView *)_ objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-	return tracks[(NSUInteger)row];
+	return albums[(NSUInteger)row];
 }
 
 - (void)libraryURLDidChange:(NSNotification *)notification {
@@ -105,23 +110,37 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 			                                filteredByIdentifier:AVMetadataCommonIdentifierTitle]
 			                      .firstObject.stringValue;
 
-			track.album = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
-			                                filteredByIdentifier:AVMetadataCommonIdentifierAlbumName]
-			                      .firstObject.stringValue;
+			track.albumTitle = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
+			                                     filteredByIdentifier:AVMetadataCommonIdentifierAlbumName]
+			                           .firstObject.stringValue;
 
 			track.artworkData = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
 			                                      filteredByIdentifier:AVMetadataCommonIdentifierArtwork]
 			                            .firstObject.dataValue;
 
-			if (track.title == nil || track.album == nil || track.artworkData == nil) {
+			if (track.title == nil || track.albumTitle == nil || track.artworkData == nil) {
 				continue;
 			}
 
 			dispatch_sync(dispatch_get_main_queue(), ^{
-				[tracks addObject:track];
-				NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:tracks.count - 1];
-				[tableView insertRowsAtIndexes:indexSet
-				                 withAnimation:NSTableViewAnimationEffectFade | NSTableViewAnimationSlideDown];
+				NSNumber *albumIndex = albumIndexes[track.albumTitle];
+				Album *album = nil;
+				if (albumIndex == nil) {
+					album = [[Album alloc] init];
+					album.title = track.albumTitle;
+					album.tracks = [[NSMutableArray alloc] init];
+					[album.tracks addObject:track];
+
+					albumIndex = [NSNumber numberWithUnsignedInteger:albums.count];
+					[albums addObject:album];
+					[albumIndexes setObject:albumIndex forKey:album.title];
+					NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:albumIndex.unsignedIntegerValue];
+					[tableView insertRowsAtIndexes:indexSet
+					                 withAnimation:NSTableViewAnimationEffectFade | NSTableViewAnimationSlideDown];
+				} else {
+					album = albums[albumIndex.unsignedIntegerValue];
+				}
+				[album.tracks addObject:track];
 			});
 		}
 	});
@@ -130,7 +149,7 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 @end
 
 @implementation LibraryCellView {
-	Track *track;
+	Album *album;
 	NSImageView *imageView;
 	NSTextField *label;
 }
@@ -164,13 +183,25 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 }
 
 - (id)objectValue {
-	return track;
+	return album;
 }
 
 - (void)setObjectValue:(id)objectValue {
-	track = objectValue;
-	label.stringValue = track.title;
-	imageView.image = [[NSImage alloc] initWithData:track.artworkData];
+	NSAssert([objectValue isKindOfClass:[Album class]], @"LibraryCellView objectValue must be Album");
+	album = objectValue;
+	label.stringValue = album.title;
+	imageView.image = [[NSImage alloc] initWithData:album.artworkData];
+}
+
+@end
+
+@implementation Track
+@end
+
+@implementation Album
+
+- (NSData *)artworkData {
+	return self.tracks[0].artworkData;
 }
 
 @end
