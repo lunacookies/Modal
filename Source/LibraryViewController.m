@@ -1,3 +1,13 @@
+@interface Track : NSObject
+@property(nonatomic) NSURL *url;
+@property(nonatomic) NSString *title;
+@property(nonatomic) NSString *album;
+@property(nonatomic) NSImage *artwork;
+@end
+
+@implementation Track
+@end
+
 @interface LibraryCellView : NSView
 @property id objectValue;
 @end
@@ -10,14 +20,14 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 @implementation LibraryViewController {
 	dispatch_queue_t import_queue;
 	NSTableView *tableView;
-	NSMutableArray<NSString *> *rows;
+	NSMutableArray<Track *> *tracks;
 }
 
 - (instancetype)init {
 	self = [super init];
 
 	import_queue = dispatch_queue_create("org.xoria.Modal.LibraryViewController.ImportQueue", DISPATCH_QUEUE_SERIAL);
-	rows = [[NSMutableArray alloc] init];
+	tracks = [[NSMutableArray alloc] init];
 
 	[NSNotificationCenter.defaultCenter addObserver:self
 	                                       selector:@selector(libraryURLDidChange:)
@@ -58,11 +68,11 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 }
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)_ {
-	return (NSInteger)rows.count;
+	return (NSInteger)tracks.count;
 }
 
 - (id)tableView:(NSTableView *)_ objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-	return rows[(NSUInteger)row];
+	return tracks[(NSUInteger)row];
 }
 
 - (void)libraryURLDidChange:(NSNotification *)notification {
@@ -82,14 +92,39 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 				continue;
 			}
 
-			if ([type conformsToType:UTTypeAudio]) {
-				dispatch_sync(dispatch_get_main_queue(), ^{
-					[rows addObject:url.path];
-					NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:rows.count - 1];
-					[tableView insertRowsAtIndexes:indexSet
-					                 withAnimation:NSTableViewAnimationEffectFade | NSTableViewAnimationSlideDown];
-				});
+			if (![type conformsToType:UTTypeAudio]) {
+				continue;
 			}
+
+			Track *track = [[Track alloc] init];
+			track.url = url;
+
+			AVAsset *asset = [AVAsset assetWithURL:url];
+
+			track.title = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
+			                                filteredByIdentifier:AVMetadataCommonIdentifierTitle]
+			                      .firstObject.stringValue;
+
+			track.album = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
+			                                filteredByIdentifier:AVMetadataCommonIdentifierAlbumName]
+			                      .firstObject.stringValue;
+
+			NSData *artworkData = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
+			                                        filteredByIdentifier:AVMetadataCommonIdentifierArtwork]
+			                              .firstObject.dataValue;
+
+			track.artwork = [[NSImage alloc] initWithData:artworkData];
+
+			if (track.title == nil || track.album == nil || track.artwork == nil) {
+				continue;
+			}
+
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				[tracks addObject:track];
+				NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:tracks.count - 1];
+				[tableView insertRowsAtIndexes:indexSet
+				                 withAnimation:NSTableViewAnimationEffectFade | NSTableViewAnimationSlideDown];
+			});
 		}
 	});
 }
@@ -97,6 +132,8 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 @end
 
 @implementation LibraryCellView {
+	Track *track;
+	NSImageView *imageView;
 	NSTextField *label;
 }
 
@@ -104,24 +141,38 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	self = [super initWithFrame:frameRect];
 	self.identifier = LibraryCellViewIdentifier;
 
+	imageView = [[NSImageView alloc] init];
+	imageView.translatesAutoresizingMaskIntoConstraints = NO;
+	[self addSubview:imageView];
+
 	label = [NSTextField labelWithString:@""];
 	label.translatesAutoresizingMaskIntoConstraints = NO;
 	[self addSubview:label];
+
+	[label setContentHuggingPriority:NSLayoutPriorityRequired forOrientation:NSLayoutConstraintOrientationVertical];
 	[NSLayoutConstraint activateConstraints:@[
-		[label.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
-		[label.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+		[imageView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+		[label.centerYAnchor constraintEqualToAnchor:imageView.centerYAnchor],
+
+		[imageView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+		[label.leadingAnchor constraintEqualToAnchor:imageView.trailingAnchor constant:8],
 		[label.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+
+		[imageView.widthAnchor constraintEqualToAnchor:imageView.heightAnchor],
+		[imageView.heightAnchor constraintEqualToAnchor:label.heightAnchor],
 	]];
 
 	return self;
 }
 
 - (id)objectValue {
-	return label.objectValue;
+	return track;
 }
 
 - (void)setObjectValue:(id)objectValue {
-	label.objectValue = objectValue;
+	track = objectValue;
+	label.stringValue = track.title;
+	imageView.image = track.artwork;
 }
 
 @end
