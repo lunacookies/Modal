@@ -17,10 +17,10 @@
 
 const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Modal.LibraryCellViewIdentifier";
 
-@interface LibraryViewController () <NSTableViewDelegate, NSTableViewDataSource>
+@interface LibraryAlbumsWindowController () <NSTableViewDelegate, NSTableViewDataSource>
 @end
 
-@implementation LibraryViewController {
+@implementation LibraryAlbumsWindowController {
 	dispatch_queue_t import_queue;
 	NSTableView *tableView;
 	NSMutableArray<Album *> *albums;
@@ -28,8 +28,19 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 }
 
 - (instancetype)init {
-	self = [super init];
+	return [super initWithWindowNibName:@""];
+}
 
+- (void)loadWindow {
+	self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 500, 500)
+	                                          styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+	                                                    NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+	                                            backing:NSBackingStoreBuffered
+	                                              defer:NO];
+	[self.window center];
+}
+
+- (void)windowDidLoad {
 	import_queue = dispatch_queue_create("org.xoria.Modal.LibraryViewController.ImportQueue", DISPATCH_QUEUE_SERIAL);
 	albums = [[NSMutableArray alloc] init];
 	albumIndexes = [[NSMutableDictionary alloc] init];
@@ -39,10 +50,6 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	                                           name:LibraryURLDidChangeNotificationName
 	                                         object:nil];
 
-	return self;
-}
-
-- (void)viewDidLoad {
 	tableView = [[NSTableView alloc] init];
 	tableView.dataSource = self;
 	tableView.delegate = self;
@@ -54,13 +61,14 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	scrollView.documentView = tableView;
 	scrollView.hasVerticalScroller = YES;
 
+	NSView *contentView = self.window.contentView;
 	scrollView.translatesAutoresizingMaskIntoConstraints = NO;
-	[self.view addSubview:scrollView];
+	[contentView addSubview:scrollView];
 	[NSLayoutConstraint activateConstraints:@[
-		[scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
-		[scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
-		[scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-		[scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+		[scrollView.topAnchor constraintEqualToAnchor:contentView.topAnchor],
+		[scrollView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor],
+		[scrollView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor],
+		[scrollView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
 	]];
 }
 

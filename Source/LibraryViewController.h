@@ -1,2 +1,0 @@
-@interface LibraryViewController : NSViewController
-@end

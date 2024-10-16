@@ -1,18 +1,25 @@
-@implementation OnboardingViewController {
+@implementation OnboardingWindowController {
 	id target;
 	SEL action;
 }
 
 + (instancetype)controllerWithTarget:(id)target_ action:(SEL)action_ {
-	OnboardingViewController *result = [[OnboardingViewController alloc] init];
+	OnboardingWindowController *result = [[OnboardingWindowController alloc] initWithWindowNibName:@""];
 	result->target = target_;
 	result->action = action_;
 	return result;
 }
 
-- (void)viewDidLoad {
-	[super viewDidLoad];
+- (void)loadWindow {
+	self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 500, 500)
+	                                          styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+	                                                    NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+	                                            backing:NSBackingStoreBuffered
+	                                              defer:NO];
+	[self.window center];
+}
 
+- (void)windowDidLoad {
 	NSTextField *heading = [NSTextField labelWithString:@"Choose A Library Folder"];
 	heading.font = [NSFont systemFontOfSize:24];
 
@@ -30,9 +37,9 @@
 	[stackView addView:label inGravity:NSStackViewGravityCenter];
 	[stackView addView:button inGravity:NSStackViewGravityCenter];
 
-	[self.view addSubview:stackView];
+	[self.window.contentView addSubview:stackView];
 	stackView.translatesAutoresizingMaskIntoConstraints = NO;
-	NSLayoutGuide *guide = self.view.layoutMarginsGuide;
+	NSLayoutGuide *guide = self.window.contentView.layoutMarginsGuide;
 	[NSLayoutConstraint activateConstraints:@[
 		[stackView.topAnchor constraintEqualToAnchor:guide.topAnchor],
 		[stackView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor],
@@ -53,16 +60,17 @@
 	                                                                            inDomains:NSUserDomainMask];
 	openPanel.directoryURL = musicDirectoryURLs.firstObject;
 
-	[openPanel beginSheetModalForWindow:self.view.window
+	[openPanel beginSheetModalForWindow:self.window
 	                  completionHandler:^(NSModalResponse result) {
 		                  if (result == NSModalResponseOK) {
-			                  [NSNotificationCenter.defaultCenter
-			                          postNotificationName:LibraryURLDidChangeNotificationName
-			                                        object:openPanel.URL];
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 			                  [target performSelector:action];
 #pragma clang diagnostic pop
+			                  [NSNotificationCenter.defaultCenter
+			                          postNotificationName:LibraryURLDidChangeNotificationName
+			                                        object:openPanel.URL];
+			                  [self close];
 		                  }
 	                  }];
 }

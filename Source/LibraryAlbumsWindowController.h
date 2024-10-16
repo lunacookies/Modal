@@ -1,0 +1,2 @@
+@interface LibraryAlbumsWindowController : NSWindowController
+@end

@@ -1,5 +1,6 @@
 @implementation AppDelegate {
-	NSWindow *window;
+	OnboardingWindowController *onboardingWindowController;
+	LibraryAlbumsWindowController *libraryAlbumsWindowController;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
@@ -233,9 +234,16 @@
 	NSApp.mainMenu = mainMenu;
 	[NSApp activate];
 
-	window = [NSWindow windowWithContentViewController:[[MainViewController alloc] init]];
-	[window makeKeyAndOrderFront:nil];
+	libraryAlbumsWindowController = [[LibraryAlbumsWindowController alloc] init];
+	onboardingWindowController = [OnboardingWindowController controllerWithTarget:self
+	                                                                       action:@selector(didCompleteOnboarding)];
+	[onboardingWindowController showWindow:nil];
+
 	[NSApp activate];
+}
+
+- (void)didCompleteOnboarding {
+	[libraryAlbumsWindowController showWindow:nil];
 }
 
 @end
