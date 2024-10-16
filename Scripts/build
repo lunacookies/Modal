@@ -33,3 +33,17 @@ clang \
 	-Wstrict-prototypes \
 	-o "Build/Modal.app/Contents/MacOS/Modal" \
 	"Source/EntryPoint.m"
+
+plutil \
+	-convert xml1 \
+	-o "Build/Modal.entitlements" \
+	"Data/Entitlements.json"
+
+plutil \
+	-insert "com\.apple\.security\.get-task-allow" -bool YES \
+	"Build/Modal.entitlements"
+
+codesign \
+	--sign - \
+	--entitlements "Build/Modal.entitlements" \
+	--options runtime "Build/Modal.app/Contents/MacOS/Modal"
