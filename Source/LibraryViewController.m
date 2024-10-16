@@ -2,7 +2,7 @@
 @property(nonatomic) NSURL *url;
 @property(nonatomic) NSString *title;
 @property(nonatomic) NSString *album;
-@property(nonatomic) NSImage *artwork;
+@property(nonatomic) NSData *artworkData;
 @end
 
 @implementation Track
@@ -109,13 +109,11 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 			                                filteredByIdentifier:AVMetadataCommonIdentifierAlbumName]
 			                      .firstObject.stringValue;
 
-			NSData *artworkData = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
-			                                        filteredByIdentifier:AVMetadataCommonIdentifierArtwork]
-			                              .firstObject.dataValue;
+			track.artworkData = [AVMetadataItem metadataItemsFromArray:asset.commonMetadata
+			                                      filteredByIdentifier:AVMetadataCommonIdentifierArtwork]
+			                            .firstObject.dataValue;
 
-			track.artwork = [[NSImage alloc] initWithData:artworkData];
-
-			if (track.title == nil || track.album == nil || track.artwork == nil) {
+			if (track.title == nil || track.album == nil || track.artworkData == nil) {
 				continue;
 			}
 
@@ -172,7 +170,7 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 - (void)setObjectValue:(id)objectValue {
 	track = objectValue;
 	label.stringValue = track.title;
-	imageView.image = track.artwork;
+	imageView.image = [[NSImage alloc] initWithData:track.artworkData];
 }
 
 @end
