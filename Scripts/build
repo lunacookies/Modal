@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+clang-format -i Source/*.m Source/*.h
+
+rm -rf "Build"
+mkdir -p "Build/Modal.app/Contents"
+mkdir -p "Build/Modal.app/Contents/MacOS"
+mkdir -p "Build/Modal.app/Contents/Resources/en.lproj"
+
+plutil \
+	-convert binary1 \
+	-o "Build/Modal.app/Contents/Info.plist" \
+	"Data/Info.json"
+
+plutil -convert binary1 \
+	-o "Build/Modal.app/Contents/Resources/en.lproj/InfoPlist.strings" \
+	"Data/InfoPlist.json"
+
+clang \
+	-fmodules -fobjc-arc \
+	-g \
+	-fsanitize=undefined \
+	-W \
+	-Wall \
+	-Wextra \
+	-Wpedantic \
+	-Wconversion \
+	-Wimplicit-fallthrough \
+	-Wmissing-prototypes \
+	-Wshadow \
+	-Wstrict-prototypes \
+	-o "Build/Modal.app/Contents/MacOS/Modal" \
+	"Source/EntryPoint.m"
