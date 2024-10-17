@@ -126,13 +126,11 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 
 			dispatch_sync(dispatch_get_main_queue(), ^{
 				NSNumber *albumIndex = albumIndexes[track.albumTitle];
-				Album *album = nil;
 				if (albumIndex == nil) {
-					album = [[Album alloc] init];
+					Album *album = [[Album alloc] init];
 					album.title = track.albumTitle;
 					album.tracks = [[NSMutableArray alloc] init];
 					[album.tracks addObject:track];
-
 					albumIndex = [NSNumber numberWithUnsignedInteger:albums.count];
 					[albums addObject:album];
 					[albumIndexes setObject:albumIndex forKey:album.title];
@@ -140,9 +138,9 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 					[tableView insertRowsAtIndexes:indexSet
 					                 withAnimation:NSTableViewAnimationEffectFade | NSTableViewAnimationSlideDown];
 				} else {
-					album = albums[albumIndex.unsignedIntegerValue];
+					Album *album = albums[albumIndex.unsignedIntegerValue];
+					[album.tracks addObject:track];
 				}
-				[album.tracks addObject:track];
 			});
 		}
 	});
