@@ -4,11 +4,23 @@
 
 const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria.Modal.LibraryAlbumCellViewIdentifier";
 
+@interface LibraryAlbumLabelCellView : NSView
+@property id objectValue;
+@end
+
+const NSUserInterfaceItemIdentifier LibraryAlbumLabelCellViewIdentifier =
+        @"org.xoria.Modal.LibraryAlbumLabelCellViewIdentifier";
+
 @interface LibraryAlbumsWindowController () <NSTableViewDelegate, NSTableViewDataSource>
 @end
 
+const NSUserInterfaceItemIdentifier LibraryAlbumsTitleColumnIdentifier =
+        @"org.xoria.Modal.LibraryAlbumsTitleColumnIdentifier";
+const NSUserInterfaceItemIdentifier LibraryAlbumsTrackCountColumnIdentifier =
+        @"org.xoria.Modal.LibraryAlbumsTrackCountColumnIdentifier";
+
 @implementation LibraryAlbumsWindowController {
-	dispatch_queue_t import_queue;
+	dispatch_queue_t importQueue;
 	NSTableView *tableView;
 	NSMutableArray<Album *> *albums;
 	NSMutableDictionary<NSString *, NSNumber *> *albumIndexes;
@@ -29,7 +41,7 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 }
 
 - (void)windowDidLoad {
-	import_queue = dispatch_queue_create("org.xoria.Modal.LibraryViewController.ImportQueue", DISPATCH_QUEUE_SERIAL);
+	importQueue = dispatch_queue_create("org.xoria.Modal.LibraryViewController.ImportQueue", DISPATCH_QUEUE_SERIAL);
 	albums = [[NSMutableArray alloc] init];
 	albumIndexes = [[NSMutableDictionary alloc] init];
 
@@ -44,8 +56,14 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 	tableView.target = self;
 	tableView.doubleAction = @selector(didDoubleClickOnRow:);
 
-	NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"column"];
-	[tableView addTableColumn:column];
+	NSTableColumn *titleColumn = [[NSTableColumn alloc] initWithIdentifier:LibraryAlbumsTitleColumnIdentifier];
+	titleColumn.title = @"Title";
+	[tableView addTableColumn:titleColumn];
+
+	NSTableColumn *trackCountColumn =
+	        [[NSTableColumn alloc] initWithIdentifier:LibraryAlbumsTrackCountColumnIdentifier];
+	trackCountColumn.title = @"Track Count";
+	[tableView addTableColumn:trackCountColumn];
 
 	NSScrollView *scrollView = [[NSScrollView alloc] init];
 	scrollView.documentView = tableView;
@@ -63,17 +81,34 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 }
 
 - (void)didDoubleClickOnRow:(NSTableView *)_ {
+	if (tableView.clickedRow < 0) {
+		return;
+	}
 	Album *album = albums[(NSUInteger)tableView.clickedRow];
 	albumWindowController = [AlbumWindowController controllerWithAlbum:album];
 	[albumWindowController showWindow:nil];
 }
 
 - (NSView *)tableView:(NSTableView *)_ viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-	LibraryAlbumCellView *view = [tableView makeViewWithIdentifier:LibraryAlbumCellViewIdentifier owner:nil];
-	if (view == nil) {
-		view = [[LibraryAlbumCellView alloc] init];
+	if ([tableColumn.identifier isEqualToString:LibraryAlbumsTitleColumnIdentifier]) {
+		LibraryAlbumCellView *view = [tableView makeViewWithIdentifier:LibraryAlbumCellViewIdentifier owner:nil];
+		if (view == nil) {
+			view = [[LibraryAlbumCellView alloc] init];
+		}
+		return view;
 	}
-	return view;
+
+	if ([tableColumn.identifier isEqualToString:LibraryAlbumsTrackCountColumnIdentifier]) {
+		LibraryAlbumLabelCellView *view = [tableView makeViewWithIdentifier:LibraryAlbumLabelCellViewIdentifier
+		                                                              owner:nil];
+		if (view == nil) {
+			view = [[LibraryAlbumLabelCellView alloc] init];
+		}
+		return view;
+	}
+
+	NSAssert(false, @"unknown column identifier %@", tableColumn.identifier);
+	return nil;
 }
 
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)_ {
@@ -81,13 +116,24 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 }
 
 - (id)tableView:(NSTableView *)_ objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-	return albums[(NSUInteger)row];
+	Album *album = albums[(NSUInteger)row];
+
+	if ([tableColumn.identifier isEqualToString:LibraryAlbumsTitleColumnIdentifier]) {
+		return album;
+	}
+
+	if ([tableColumn.identifier isEqualToString:LibraryAlbumsTrackCountColumnIdentifier]) {
+		return [NSNumber numberWithUnsignedInteger:album.tracks.count];
+	}
+
+	NSAssert(false, @"unknown column identifier %@", tableColumn.identifier);
+	return nil;
 }
 
 - (void)libraryURLDidChange:(NSNotification *)notification {
 	NSURL *libraryURL = notification.object;
 
-	dispatch_async(import_queue, ^{
+	dispatch_async(importQueue, ^{
 		NSDirectoryEnumerator<NSURL *> *enumerator =
 		        [NSFileManager.defaultManager enumeratorAtURL:libraryURL
 		                           includingPropertiesForKeys:@[ NSURLContentTypeKey ]
@@ -142,6 +188,11 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 				} else {
 					Album *album = albums[albumIndex.unsignedIntegerValue];
 					[album.tracks addObject:track];
+					NSInteger trackCountColumnIndex =
+					        [tableView columnWithIdentifier:LibraryAlbumsTrackCountColumnIdentifier];
+					NSIndexSet *rowIndexes = [NSIndexSet indexSetWithIndex:albumIndex.unsignedIntegerValue];
+					NSIndexSet *columnIndexes = [NSIndexSet indexSetWithIndex:(NSUInteger)trackCountColumnIndex];
+					[tableView reloadDataForRowIndexes:rowIndexes columnIndexes:columnIndexes];
 				}
 			});
 		}
@@ -193,6 +244,55 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 	album = objectValue;
 	label.stringValue = album.title;
 	imageView.image = [[NSImage alloc] initWithData:album.artworkData];
+}
+
+@end
+
+@implementation LibraryAlbumLabelCellView {
+	NSTextField *label;
+	id objectValue;
+}
+
+- (instancetype)initWithFrame:(NSRect)frameRect {
+	self = [super initWithFrame:frameRect];
+	self.identifier = LibraryAlbumLabelCellViewIdentifier;
+
+	label = [NSTextField labelWithString:@""];
+	label.translatesAutoresizingMaskIntoConstraints = NO;
+	[self addSubview:label];
+	[NSLayoutConstraint activateConstraints:@[
+		[label.centerYAnchor constraintEqualToAnchor:self.centerYAnchor],
+		[label.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+		[label.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+	]];
+
+	return self;
+}
+
+- (id)objectValue {
+	return objectValue;
+}
+
+- (void)setObjectValue:(id)objectValue_ {
+	objectValue = objectValue_;
+
+	if ([objectValue isKindOfClass:[NSString class]]) {
+		NSString *string = objectValue;
+		label.stringValue = string;
+		label.font = [NSFont systemFontOfSize:NSFont.systemFontSize weight:NSFontWeightRegular];
+		label.alignment = NSTextAlignmentNatural;
+		return;
+	}
+
+	if ([objectValue isKindOfClass:[NSNumber class]]) {
+		NSNumber *number = objectValue;
+		label.stringValue = number.stringValue;
+		label.font = [NSFont monospacedDigitSystemFontOfSize:NSFont.systemFontSize weight:NSFontWeightRegular];
+		label.alignment = NSTextAlignmentRight;
+		return;
+	}
+
+	NSAssert(false, @"LibraryAlbumLabelCellView objectValue must be NSString or NSNumber");
 }
 
 @end
