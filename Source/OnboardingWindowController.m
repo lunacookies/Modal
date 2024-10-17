@@ -11,11 +11,13 @@
 }
 
 - (void)loadWindow {
-	self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 500, 500)
-	                                          styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-	                                                    NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+	self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 0, 0)
+	                                          styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView
 	                                            backing:NSBackingStoreBuffered
 	                                              defer:NO];
+	self.window.titlebarAppearsTransparent = YES;
+	self.window.movableByWindowBackground = YES;
+	self.window.animationBehavior = NSWindowAnimationBehaviorAlertPanel;
 	[self.window center];
 }
 
@@ -27,25 +29,37 @@
 	                @"Before you can use Modal, you must first pick a folder to use as your music library."];
 	label.alignment = NSTextAlignmentCenter;
 	label.textColor = NSColor.secondaryLabelColor;
+	label.selectable = NO;
 
 	NSButton *button = [NSButton buttonWithTitle:@"Choose…" target:self action:@selector(chooseLibrary:)];
 
 	NSStackView *stackView = [[NSStackView alloc] init];
 	stackView.orientation = NSUserInterfaceLayoutOrientationVertical;
-	stackView.spacing = 20;
+	stackView.spacing = 24;
 	[stackView addView:heading inGravity:NSStackViewGravityCenter];
 	[stackView addView:label inGravity:NSStackViewGravityCenter];
 	[stackView addView:button inGravity:NSStackViewGravityCenter];
 
-	[self.window.contentView addSubview:stackView];
+	NSVisualEffectView *effectView = [[NSVisualEffectView alloc] init];
+	effectView.material = NSVisualEffectMaterialHUDWindow;
+	[effectView addSubview:stackView];
 	stackView.translatesAutoresizingMaskIntoConstraints = NO;
-	NSLayoutGuide *guide = self.window.contentView.layoutMarginsGuide;
 	[NSLayoutConstraint activateConstraints:@[
-		[stackView.topAnchor constraintEqualToAnchor:guide.topAnchor],
-		[stackView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor],
-		[stackView.leadingAnchor constraintEqualToAnchor:guide.leadingAnchor],
-		[stackView.trailingAnchor constraintEqualToAnchor:guide.trailingAnchor],
+		[stackView.topAnchor constraintEqualToAnchor:effectView.topAnchor constant:36],
+		[stackView.bottomAnchor constraintEqualToAnchor:effectView.bottomAnchor constant:-36],
+		[stackView.leadingAnchor constraintEqualToAnchor:effectView.leadingAnchor constant:48],
+		[stackView.trailingAnchor constraintEqualToAnchor:effectView.trailingAnchor constant:-48],
 		[label.widthAnchor constraintLessThanOrEqualToAnchor:heading.widthAnchor],
+	]];
+
+	NSView *contentView = self.window.contentView;
+	[contentView addSubview:effectView];
+	effectView.translatesAutoresizingMaskIntoConstraints = NO;
+	[NSLayoutConstraint activateConstraints:@[
+		[effectView.topAnchor constraintEqualToAnchor:contentView.topAnchor],
+		[effectView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor],
+		[effectView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor],
+		[effectView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor],
 	]];
 }
 

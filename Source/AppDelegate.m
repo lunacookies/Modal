@@ -232,12 +232,16 @@
 	}
 
 	NSApp.mainMenu = mainMenu;
-	[NSApp activate];
 
 	libraryAlbumsWindowController = [[LibraryAlbumsWindowController alloc] init];
 	onboardingWindowController = [OnboardingWindowController controllerWithTarget:self
 	                                                                       action:@selector(didCompleteOnboarding)];
-	[onboardingWindowController showWindow:nil];
+
+	// Work around AppKit bug (?) where window open animation
+	// doesn’t appear on very first runloop turn.
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[onboardingWindowController showWindow:nil];
+	});
 
 	[NSApp activate];
 }
