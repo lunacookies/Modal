@@ -1,16 +1,3 @@
-@interface Track : NSObject
-@property(nonatomic) NSURL *url;
-@property(nonatomic) NSString *title;
-@property(nonatomic) NSString *albumTitle;
-@property(nonatomic) NSData *artworkData;
-@end
-
-@interface Album : NSObject
-@property(nonatomic) NSString *title;
-@property(nonatomic) NSMutableArray<Track *> *tracks;
-@property(readonly) NSData *artworkData;
-@end
-
 @interface LibraryCellView : NSView
 @property id objectValue;
 @end
@@ -199,17 +186,6 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	album = objectValue;
 	label.stringValue = album.title;
 	imageView.image = [[NSImage alloc] initWithData:album.artworkData];
-}
-
-@end
-
-@implementation Track
-@end
-
-@implementation Album
-
-- (NSData *)artworkData {
-	return self.tracks[0].artworkData;
 }
 
 @end

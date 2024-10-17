@@ -5,10 +5,12 @@
 const NSNotificationName LibraryURLDidChangeNotificationName = @"org.xoria.Modal.LibraryURLDidChangeNotificationName";
 
 #include "AppDelegate.h"
+#include "Model.h"
 #include "OnboardingWindowController.h"
 #include "LibraryAlbumsWindowController.h"
 
 #include "AppDelegate.m"
+#include "Model.m"
 #include "OnboardingWindowController.m"
 #include "LibraryAlbumsWindowController.m"
 
