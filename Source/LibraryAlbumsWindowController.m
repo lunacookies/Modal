@@ -12,6 +12,7 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 	NSTableView *tableView;
 	NSMutableArray<Album *> *albums;
 	NSMutableDictionary<NSString *, NSNumber *> *albumIndexes;
+	AlbumWindowController *albumWindowController;
 }
 
 - (instancetype)init {
@@ -63,7 +64,8 @@ const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria
 
 - (void)didDoubleClickOnRow:(NSTableView *)_ {
 	Album *album = albums[(NSUInteger)tableView.clickedRow];
-	[[AlbumWindowController controllerWithAlbum:album] showWindow:nil];
+	albumWindowController = [AlbumWindowController controllerWithAlbum:album];
+	[albumWindowController showWindow:nil];
 }
 
 - (NSView *)tableView:(NSTableView *)_ viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
