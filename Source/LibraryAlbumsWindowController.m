@@ -1,8 +1,8 @@
-@interface LibraryCellView : NSView
+@interface LibraryAlbumCellView : NSView
 @property id objectValue;
 @end
 
-const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Modal.LibraryCellViewIdentifier";
+const NSUserInterfaceItemIdentifier LibraryAlbumCellViewIdentifier = @"org.xoria.Modal.LibraryAlbumCellViewIdentifier";
 
 @interface LibraryAlbumsWindowController () <NSTableViewDelegate, NSTableViewDataSource>
 @end
@@ -40,6 +40,8 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	tableView = [[NSTableView alloc] init];
 	tableView.dataSource = self;
 	tableView.delegate = self;
+	tableView.target = self;
+	tableView.doubleAction = @selector(didDoubleClickOnRow:);
 
 	NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"column"];
 	[tableView addTableColumn:column];
@@ -59,10 +61,15 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 	]];
 }
 
+- (void)didDoubleClickOnRow:(NSTableView *)_ {
+	Album *album = albums[(NSUInteger)tableView.clickedRow];
+	[[AlbumWindowController controllerWithAlbum:album] showWindow:nil];
+}
+
 - (NSView *)tableView:(NSTableView *)_ viewForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-	LibraryCellView *view = [tableView makeViewWithIdentifier:LibraryCellViewIdentifier owner:nil];
+	LibraryAlbumCellView *view = [tableView makeViewWithIdentifier:LibraryAlbumCellViewIdentifier owner:nil];
 	if (view == nil) {
-		view = [[LibraryCellView alloc] init];
+		view = [[LibraryAlbumCellView alloc] init];
 	}
 	return view;
 }
@@ -143,7 +150,7 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 
 @end
 
-@implementation LibraryCellView {
+@implementation LibraryAlbumCellView {
 	Album *album;
 	NSImageView *imageView;
 	NSTextField *label;
@@ -151,7 +158,7 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 
 - (instancetype)initWithFrame:(NSRect)frameRect {
 	self = [super initWithFrame:frameRect];
-	self.identifier = LibraryCellViewIdentifier;
+	self.identifier = LibraryAlbumCellViewIdentifier;
 
 	imageView = [[NSImageView alloc] init];
 	imageView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -182,7 +189,7 @@ const NSUserInterfaceItemIdentifier LibraryCellViewIdentifier = @"org.xoria.Moda
 }
 
 - (void)setObjectValue:(id)objectValue {
-	NSAssert([objectValue isKindOfClass:[Album class]], @"LibraryCellView objectValue must be Album");
+	NSAssert([objectValue isKindOfClass:[Album class]], @"LibraryAlbumCellView objectValue must be Album");
 	album = objectValue;
 	label.stringValue = album.title;
 	imageView.image = [[NSImage alloc] initWithData:album.artworkData];
